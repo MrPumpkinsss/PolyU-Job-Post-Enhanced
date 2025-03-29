@@ -18,6 +18,7 @@
       background-color: #f5f5f5;
       color: #333;
       line-height: 1.6;
+      -webkit-tap-highlight-color: transparent;
     }
     /* 页面标题 */
     h1 {
@@ -155,6 +156,10 @@
       background-color: #f8f8f8;
       z-index: 2;
     }
+    /* 表格容器横向滚动支持 */
+    #summaryTableContainer {
+      overflow-x: auto;
+    }
     /* 小屏幕自适应 */
     @media (max-width: 600px) {
       body {
@@ -176,6 +181,9 @@
       #filterDiv {
         padding: 10px;
       }
+      table, th, td {
+        font-size: 14px;
+      }
     }
     /* 免责声明模态框样式 */
     #disclaimerModal {
@@ -190,12 +198,15 @@
       justify-content: center;
       z-index: 9999;
     }
+    /* 修改免责声明内容样式：控制尺寸且允许滚动 */
     #disclaimerModal .modal-content {
       background-color: #fff;
       padding: 20px 30px;
       border-radius: 8px;
-      max-width: 1000px;
       width: 90%;
+      max-width: 500px;  /* 限制最大宽度 */
+      max-height: 90vh;  /* 限制最大高度 */
+      overflow-y: auto;  /* 内容超出时添加垂直滚动条 */
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     /* 标题“免责声明”居中 */
