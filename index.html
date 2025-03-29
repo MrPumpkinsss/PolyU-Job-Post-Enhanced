@@ -177,9 +177,101 @@
         padding: 10px;
       }
     }
+    /* 免责声明模态框样式 */
+    #disclaimerModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #disclaimerModal .modal-content {
+      background-color: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      max-width: 1000px;
+      width: 90%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    /* 标题“免责声明”居中 */
+    #disclaimerModal h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    /* 段落及子标题左对齐 */
+    #disclaimerModal p,
+    #disclaimerModal h3 {
+      text-align: left;
+      margin: 10px 0;
+    }
+    /* 按钮居中 */
+    #disclaimerModal button {
+      display: block;
+      margin: 20px auto 0;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: #1976d2;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #disclaimerModal button:hover {
+      background-color: #1565c0;
+    }
   </style>
 </head>
 <body>
+  <!-- 免责声明模态框 -->
+  <div id="disclaimerModal">
+    <div class="modal-content">
+      <h2>免责声明</h2>
+      
+      <div class="disclaimer-section">
+        <h3>1. 数据来源说明</h3>
+        <p>
+          本网站部分信息通过数据采集技术从 PolyU POSS 网站获取，并在此基础上对全局搜索功能进行了改进后展示。信息的采集、解析及展示均非由原信息发布机构直接提供，数据的准确性、完整性及及时性可能存在偏差。
+        </p>
+      </div>
+      
+      <div class="disclaimer-section">
+        <h3>2. 信息准确性及时效性</h3>
+        <p>
+          由于数据采集、处理过程中可能存在延迟、误差或不完整性，本网站所展示的信息仅供参考，不能完全保证其准确性或时效性。用户在依据相关信息做出任何决策前，应自行核查原始数据或联系原发布机构确认详细信息。
+        </p>
+      </div>
+      
+      <div class="disclaimer-section">
+        <h3>3. 使用风险提示</h3>
+        <p>
+          用户理解并认可，因信息错误或延时所可能引发的任何后果或损失，本网站及其运营者不承担任何责任。用户使用本网站所提供的信息，即表示接受本免责声明中的全部条款。
+        </p>
+      </div>
+      
+      <div class="disclaimer-section">
+        <h3>4. 第三方责任声明</h3>
+        <p>
+          本网站从 PolyU POSS（及其他第三方平台）抓取的信息，原数据由第三方负责。如因第三方网站信息更新或内容调整而导致信息不符，本网站不对此承担任何法律责任，相关权利义务以原发布方为准。
+        </p>
+      </div>
+      
+      <div class="disclaimer-section">
+        <h3>5. 权利保留</h3>
+        <p>
+          本网站保留在任何时间对本免责声明内容进行修改的权利，修改后的内容将在本页面予以公布，并在发布后立即生效。建议用户定期查阅本免责声明以了解最新内容。点击“同意”后即表示您已阅读并同意本免责声明的所有条款。
+        </p>
+      </div>
+      
+      <button id="agreeButton">同意</button>
+    </div>
+  </div>
+
   <h1>Job-Post-Enhanced</h1>
   <div id="filterDiv">
     <!-- 类型筛选 -->
@@ -218,6 +310,11 @@
   <!-- 引入 SheetJS XLSX 库 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
+    // 当用户点击“同意”按钮时，隐藏免责声明模态框
+    document.getElementById("agreeButton").addEventListener("click", function() {
+      document.getElementById("disclaimerModal").style.display = "none";
+    });
+    
     document.addEventListener("DOMContentLoaded", function() {
       let allTableData = [];
       let filteredData = [];
