@@ -1,6 +1,6 @@
 # PolyU-Job-Post-Enhanced
 
-**PolyU-Job-Post-Enhanced** is a web project that crawls job posting data from the PolyU POSS website, processes and enhances the search functionality, and then displays the improved results on my website: [https://mrpumpkinsss.github.io/Job-Post-Enhanced/](https://mrpumpkinsss.github.io/Job-Post-Enhanced/).
+**PolyU-Job-Post-Enhanced** is a web project that crawls job posting data from the PolyU POSS website, processes and enhances the search functionality, and then displays the improved results on my website: [https://mrpumpkinsss.github.io/PolyU-Job-Post-Enhanced/](https://mrpumpkinsss.github.io/PolyU-Job-Post-Enhanced/).
 
 ## Table of Contents
 
@@ -122,7 +122,7 @@ The `main.py` file is a Python script that utilizes Selenium WebDriver to perfor
 
 1. Push the code to your GitHub repository.
 2. In the repository settings, activate GitHub Pages using either the `main` or `gh-pages` branch.
-3. The site will then be available at [https://mrpumpkinsss.github.io/Job-Post-Enhanced/](https://mrpumpkinsss.github.io/Job-Post-Enhanced/).
+3. The site will then be available at [https://mrpumpkinsss.github.io/PolyU-Job-Post-Enhanced/](https://mrpumpkinsss.github.io/PolyU-Job-Post-Enhanced/).
 
 ## Disclaimer
 
