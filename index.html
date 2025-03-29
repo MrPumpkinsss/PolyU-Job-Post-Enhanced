@@ -3,276 +3,320 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>职位信息中心</title>
+  <title>Excel 数据显示</title>
   <style>
-    :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #3498db;
-      --hover-color: #f0f8ff;
-      --border-color: #e0e0e0;
-      --box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
+    /* 全局盒模型调整 */
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
     }
-
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      line-height: 1.6;
-      background: #f8f9fa;
-      color: var(--primary-color);
+      font-family: Arial, sans-serif;
+      margin: 20px;
     }
-
     h1 {
       text-align: center;
-      padding: 1.5rem;
-      background: linear-gradient(135deg, #2c3e50, #3498db);
-      color: white;
-      margin-bottom: 2rem;
-      box-shadow: var(--box-shadow);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      font-size: 2em;
     }
-
+    /* 筛选框样式 */
     #filterDiv {
-      max-width: 800px;
-      margin: 1rem auto;
-      padding: 0 1rem;
+      text-align: center;
+      margin: 10px 0;
     }
-
-    #jobTypeSelect {
-      width: 100%;
-      padding: 0.8rem;
-      border: 2px solid var(--secondary-color);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: white;
-      transition: all 0.3s ease;
+    #filterDiv select {
+      padding: 5px;
+      font-size: 16px;
     }
-
-    #jobTypeSelect:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
-    }
-
+    /* 布局：左右面板 */
     #container {
       display: flex;
-      gap: 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 1rem;
+      gap: 20px;
+      margin-top: 20px;
     }
-
     #leftPanel {
-      flex: 0 0 35%;
-      background: white;
-      border-radius: 12px;
-      box-shadow: var(--box-shadow);
-      overflow: hidden;
+      width: 35%;
+      max-width: 400px;
+      border-right: 1px solid #ccc;
+      padding-right: 10px;
+      overflow-y: auto;
+      height: 80vh;
     }
-
     #rightPanel {
       flex: 1;
-      background: white;
-      border-radius: 12px;
-      box-shadow: var(--box-shadow);
-      padding: 1.5rem;
+      padding-left: 10px;
+      overflow-y: auto;
+      height: 80vh;
     }
-
+    /* 表格样式 */
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.95em;
+      margin-bottom: 10px;
     }
-
-    th {
-      background: #f8f9fa;
-      padding: 1rem;
-      font-weight: 600;
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
       text-align: left;
-      border-bottom: 2px solid var(--border-color);
+      word-wrap: break-word;
     }
-
-    td {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      transition: background 0.2s ease;
+    th {
+      background-color: #f4f4f4;
     }
-
-    tr:hover td {
-      background: var(--hover-color);
+    tr:nth-child(even) {
+      background-color: #fafafa;
     }
-
-    tr.selected td {
-      background: #e3f2fd !important;
-      box-shadow: inset 3px 0 0 var(--secondary-color);
-    }
-
-    .sortable {
-      position: relative;
+    tr:hover {
+      background-color: #e8f4ff;
       cursor: pointer;
-      transition: background 0.2s ease;
     }
-
-    .sortable:hover {
-      background: #f1f1f1;
+    /* 可排序列指针效果 */
+    th.sortable {
+      cursor: pointer;
     }
-
     .sort-indicator {
-      display: inline-block;
-      margin-left: 0.5rem;
-      color: var(--secondary-color);
-      opacity: 0.6;
+      font-size: 0.8em;
+      margin-left: 5px;
     }
-
-    .asc::after {
-      content: "↑";
-      color: var(--secondary-color);
-    }
-
-    .desc::after {
-      content: "↓";
-      color: var(--secondary-color);
-    }
-
+    /* 详细信息卡片样式 */
     #jobDetail table {
-      background: white;
+      width: 100%;
     }
-
     #jobDetail th {
       width: 30%;
-      background: #f8f9fa;
-      vertical-align: top;
+      background-color: #f0f0f0;
     }
-
-    #jobDetail td {
-      background: white;
-    }
-
-    @media (max-width: 768px) {
+    /* 小屏幕自适应 */
+    @media (max-width: 600px) {
+      body {
+        margin: 10px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
       #container {
         flex-direction: column;
       }
-
       #leftPanel, #rightPanel {
         width: 100%;
-        margin-bottom: 1rem;
+        height: auto;
+        border: none;
+        padding: 0;
       }
-
-      th, td {
-        padding: 0.8rem;
-      }
-
-      h1 {
-        font-size: 1.5rem;
-        padding: 1rem;
-      }
-    }
-
-    /* 加载动画 */
-    @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
-    }
-
-    #summaryTableContainer[data-loading="true"]::after {
-      content: "加载中...";
-      display: block;
-      padding: 2rem;
-      text-align: center;
-      color: #666;
-      animation: pulse 1.5s infinite;
-    }
-
-    /* 空状态提示 */
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: #666;
-    }
-
-    .empty-state i {
-      font-size: 3rem;
-      color: #ddd;
-      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
-  <!-- 保持原有HTML结构不变 -->
-  <h1>职位信息中心</h1>
+  <h1>Excel 数据显示</h1>
   <div id="filterDiv">
+    <label for="jobTypeSelect">选择类型: </label>
     <select id="jobTypeSelect">
-      <!-- 保持原有选项不变 -->
+      <option value="">全部</option>
+      <option value="Graduate Position">Graduate Position</option>
+      <option value="Part-time Position">Part-time Position</option>
+      <option value="Temporary Position">Temporary Position</option>
+      <option value="Student Assistants via Work-on-Campus by CPS">Student Assistants via Work-on-Campus by CPS</option>
+      <option value="Internship Position - Half- or One-year Internship">Internship Position - Half- or One-year Internship</option>
+      <option value="Internship Position - Summer Internship">Internship Position - Summer Internship</option>
+      <option value="Internship Position - Winter Internship">Internship Position - Winter Internship</option>
+      <option value="Internship Position - Government Internship">Internship Position - Government Internship</option>
+      <option value="Internship Position - STEM Internship">Internship Position - STEM Internship</option>
     </select>
   </div>
   
   <div id="container">
     <div id="leftPanel">
-      <div id="summaryTableContainer" data-loading="true"></div>
+      <div id="summaryTableContainer">加载中...</div>
     </div>
     <div id="rightPanel">
       <div id="jobDetail">
-        <div class="empty-state">
-          <div>👆</div>
-          <p>点击左侧职位查看详细信息</p>
-        </div>
+        <p>点击左侧项目查看详细信息</p>
       </div>
     </div>
   </div>
-
+  
+  <!-- 引入 SheetJS XLSX 库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
-    // 在原有JavaScript代码中添加以下改进：
-    // 在fetch开始时显示加载状态
-    document.getElementById("summaryTableContainer").setAttribute("data-loading", "true");
-    
-    // 在数据加载完成后
-    fetch("job_listings.xlsx")
-      .then(response => {
-        if (!response.ok) throw new Error('网络响应异常');
-        return response.arrayBuffer();
-      })
-      .finally(() => {
-        document.getElementById("summaryTableContainer").removeAttribute("data-loading");
-      });
-
-    // 在renderSummaryTable函数中添加空状态处理
-    function renderSummaryTable(data) {
-      // ...原有代码...
-      if (data.length < 2) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div>📭</div>
-            <p>暂无相关职位信息</p>
-          </div>`;
-        return;
-      }
-    }
-
-    // 添加键盘导航支持
-    document.addEventListener('keydown', (e) => {
-      const rows = document.querySelectorAll('#leftPanel tr');
-      const selected = document.querySelector('#leftPanel tr.selected');
-      // 下箭头键导航
-      if (e.key === 'ArrowDown' && selected) {
-        const next = selected.nextElementSibling;
-        if (next) {
-          next.click();
-          next.scrollIntoView({block: "nearest"});
+    document.addEventListener("DOMContentLoaded", function() {
+      let allTableData = [];
+      let filteredData = [];
+      // 定义左侧显示的列（概要）以及完整显示时需要的其他字段
+      const summaryColumns = ["公司名", "职位", "招聘编号", "发布时间", "截止日期", "薪资", "类型"];
+      // detailColumns 数组可以用于后期只显示某些额外信息，但此处我们直接显示 Excel 所有列
+      const detailColumns = ["公司简介", "工作描述", "技能需求", "申请方式", "工作性质"];
+      let summaryIndices = {};  // 用来存储各 summary 列对应在 Excel 表头中的位置
+      let typeColumnIndex = -1; // 用于筛选的 “类型” 列
+      let currentSortColumn = null; // 当前排序字段（summaryColumns中的字段）
+      let sortOrderAsc = true;      // true 为正序
+      
+      // 读取 Excel 数据
+      fetch("job_listings.xlsx")
+        .then(response => response.arrayBuffer())
+        .then(data => {
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          allTableData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          if (allTableData.length === 0) {
+            document.getElementById("summaryTableContainer").innerHTML = "Excel 数据为空。";
+            return;
+          }
+          
+          const headerRow = allTableData[0];
+          // 得到各 summary 字段在 Excel 中的索引
+          summaryColumns.forEach(col => {
+            summaryIndices[col] = headerRow.indexOf(col);
+          });
+          
+          // 获取“类型”的列用于筛选
+          typeColumnIndex = headerRow.indexOf("类型");
+          if (typeColumnIndex === -1) {
+            console.warn("未找到‘类型’列，筛选功能将不可用。");
+          }
+          
+          // 初始显示全部数据
+          filteredData = allTableData;
+          renderSummaryTable(filteredData);
+        })
+        .catch(error => {
+          console.error("读取 Excel 文件失败：", error);
+          document.getElementById("summaryTableContainer").innerHTML = "无法加载 Excel 数据。";
+        });
+      
+      // 筛选功能：根据下拉框选择更新左侧列表
+      document.getElementById("jobTypeSelect").addEventListener("change", filterData);
+      
+      function filterData() {
+        const selectedType = document.getElementById("jobTypeSelect").value;
+        if (selectedType === "" || typeColumnIndex === -1) {
+          filteredData = allTableData;
+        } else {
+          filteredData = [allTableData[0]].concat(
+            allTableData.slice(1).filter(row => row[typeColumnIndex] === selectedType)
+          );
         }
+        currentSortColumn = null;
+        sortOrderAsc = true;
+        renderSummaryTable(filteredData);
+        document.getElementById("jobDetail").innerHTML = "<p>点击左侧项目查看详细信息</p>";
       }
-      // 上箭头键导航
-      if (e.key === 'ArrowUp' && selected) {
-        const prev = selected.previousElementSibling;
-        if (prev) {
-          prev.click();
-          prev.scrollIntoView({block: "nearest"});
+      
+      // 渲染左侧概要列表：只显示 summaryColumns 中设置的列
+      function renderSummaryTable(data) {
+        const container = document.getElementById("summaryTableContainer");
+        container.innerHTML = "";
+        
+        const table = document.createElement("table");
+        
+        // 表头
+        const thead = document.createElement("thead");
+        const trHead = document.createElement("tr");
+        summaryColumns.forEach(col => {
+          const th = document.createElement("th");
+          th.textContent = col;
+          // 对“招聘编号”、“发布时间”、“截止日期”三列允许点击排序
+          if (["招聘编号", "发布时间", "截止日期"].includes(col)) {
+            th.classList.add("sortable");
+            th.addEventListener("click", function() {
+              sortSummaryByColumn(col);
+            });
+            const indicator = document.createElement("span");
+            indicator.textContent = " ⇅";
+            indicator.className = "sort-indicator";
+            th.appendChild(indicator);
+          }
+          trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+        
+        // 表体
+        const tbody = document.createElement("tbody");
+        data.slice(1).forEach(row => {
+          const tr = document.createElement("tr");
+          summaryColumns.forEach(col => {
+            const td = document.createElement("td");
+            let cellValue = "";
+            const colIdx = summaryIndices[col];
+            if (colIdx !== -1) {
+              cellValue = row[colIdx] !== undefined ? row[colIdx] : "";
+            }
+            td.textContent = cellValue;
+            tr.appendChild(td);
+          });
+          // 点击该行时在右侧展示完整信息
+          tr.addEventListener("click", function() {
+            showJobDetails(row);
+            // 添加行选中高亮（先移除所有选中样式）
+            const rows = tbody.getElementsByTagName("tr");
+            Array.from(rows).forEach(r => r.classList.remove("selected"));
+            tr.classList.add("selected");
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+      
+      // 显示完整详细信息（右侧），逐项显示 Excel 表中所有列
+      function showJobDetails(row) {
+        const detailContainer = document.getElementById("jobDetail");
+        detailContainer.innerHTML = "";
+        const headerRow = allTableData[0];
+        const table = document.createElement("table");
+        for (let i = 0; i < headerRow.length; i++) {
+          const tr = document.createElement("tr");
+          const th = document.createElement("th");
+          th.textContent = headerRow[i];
+          const td = document.createElement("td");
+          td.textContent = row[i] !== undefined ? row[i] : "";
+          tr.appendChild(th);
+          tr.appendChild(td);
+          table.appendChild(tr);
         }
+        detailContainer.appendChild(table);
+      }
+      
+      // 排序功能（仅排序左侧概要列表）
+      function sortSummaryByColumn(columnName) {
+        if (!filteredData || filteredData.length < 2) return;
+        const headerRow = filteredData[0];
+        const colIdx = summaryIndices[columnName];
+        if (colIdx === -1) return;
+        
+        if (currentSortColumn === columnName) {
+          sortOrderAsc = !sortOrderAsc;
+        } else {
+          currentSortColumn = columnName;
+          sortOrderAsc = true;
+        }
+        
+        const sortedRows = filteredData.slice(1).sort((a, b) => {
+          let valA = a[colIdx] || "";
+          let valB = b[colIdx] || "";
+          // 如果为日期列，则先转为日期比较
+          if (["发布时间", "截止日期"].includes(columnName)) {
+            const dateA = Date.parse(valA);
+            const dateB = Date.parse(valB);
+            if (!isNaN(dateA) && !isNaN(dateB)) {
+              return sortOrderAsc ? dateA - dateB : dateB - dateA;
+            }
+          }
+          // 如果两者均为数字，则按数字比较
+          const numA = parseFloat(valA);
+          const numB = parseFloat(valB);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return sortOrderAsc ? numA - numB : numB - numA;
+          }
+          // 默认按字符串比较
+          if (valA < valB) return sortOrderAsc ? -1 : 1;
+          if (valA > valB) return sortOrderAsc ? 1 : -1;
+          return 0;
+        });
+        
+        filteredData = [headerRow].concat(sortedRows);
+        renderSummaryTable(filteredData);
+        document.getElementById("jobDetail").innerHTML = "<p>点击左侧项目查看详细信息</p>";
       }
     });
   </script>
