@@ -5,15 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Excel 数据显示</title>
   <style>
+    /* 全局盒模型调整 */
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
     }
     h1 {
       text-align: center;
+      font-size: 2em;
     }
+    /* 当数据过长时，允许水平滚动 */
     #excelData {
       overflow-x: auto;
+      margin: 0 auto;
+      max-width: 100%;
     }
     table {
       width: 100%;
@@ -25,12 +33,27 @@
       border: 1px solid #ccc;
       padding: 10px;
       text-align: left;
+      word-wrap: break-word;
     }
     th {
       background-color: #f4f4f4;
     }
     tr:nth-child(even) {
       background-color: #fafafa;
+    }
+    /* 小屏幕自适应 */
+    @media (max-width: 600px) {
+      body {
+        margin: 10px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      th,
+      td {
+        padding: 8px;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -42,7 +65,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // 从与 index.html 同一目录下加载 data.xlsx 文件
+      // 从与当前文件同一目录下加载 Excel 文件
       fetch("job_listings.xlsx")
         .then(function(response) {
           return response.arrayBuffer();
@@ -50,17 +73,18 @@
         .then(function(data) {
           // 读取 Excel 文件内容
           var workbook = XLSX.read(data, { type: 'array' });
-          // 读取第一个工作表
+          // 获取第一个工作表
           var firstSheetName = workbook.SheetNames[0];
           var worksheet = workbook.Sheets[firstSheetName];
-          // 将工作表转换为二维数组形式
+          // 将工作表转换为二维数组，得到每行数据
           var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
           // 创建 HTML 表格
           var table = document.createElement("table");
           jsonData.forEach(function(row, rowIndex) {
             var tr = document.createElement("tr");
-            row.forEach(function(cell) {
+            // 从第二列开始，忽略第一列（序号）
+            row.slice(1).forEach(function(cell) {
               var cellElement = document.createElement(rowIndex === 0 ? "th" : "td");
               cellElement.textContent = cell;
               tr.appendChild(cellElement);
