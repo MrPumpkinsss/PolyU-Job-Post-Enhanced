@@ -334,13 +334,14 @@
     document.getElementById("agreeButton").addEventListener("click", function() {
       document.getElementById("disclaimerModal").style.display = "none";
     });
-    
+
     document.addEventListener("DOMContentLoaded", function() {
       let allTableData = [];
       let filteredData = [];
       let currentSortColumn = null; // 当前排序字段
       let sortOrderAsc = true;      // true 为正序
-
+      let showAllItems = false;     // 默认只显示前 200 条
+      
       // 用于筛选“类型”的列索引
       let typeColumnIndex = -1;
       // 用于右侧显示“工作详情(HTML)”的列索引
@@ -415,6 +416,8 @@
       
       // 综合筛选（类型和多个搜索关键词）
       function filterData() {
+        // 每次筛选时重置为只显示前 200 条数据
+        showAllItems = false;
         const selectedType = document.getElementById("jobTypeSelect").value;
         const searchQuery1 = document.getElementById("searchInput1").value;
         const searchQuery2 = document.getElementById("searchInput2").value;
@@ -455,6 +458,7 @@
           });
         }
         
+        // 重新组装包含表头与数据的数组
         filteredData = [allTableData[0]].concat(data);
         currentSortColumn = null;
         sortOrderAsc = true;
@@ -462,10 +466,21 @@
         document.getElementById("jobDetail").innerHTML = "<p>点击左侧项目查看详细信息</p>";
       }
       
-      // 渲染左侧概要列表（四列显示）
+      // 渲染左侧概要列表（四列显示）并显示总项目数
       function renderSummaryTable(data) {
         const container = document.getElementById("summaryTableContainer");
         container.innerHTML = "";
+        
+        // 获取数据行（不含表头）
+        const rowsData = data.slice(1);
+        const totalCount = rowsData.length;
+        
+        // 显示总项目数
+        const countDisplay = document.createElement("div");
+        countDisplay.textContent = `共 ${totalCount} 项`;
+        countDisplay.style.fontWeight = "bold";
+        countDisplay.style.marginBottom = "10px";
+        container.appendChild(countDisplay);
         
         const table = document.createElement("table");
         const thead = document.createElement("thead");
@@ -496,8 +511,10 @@
         
         const tbody = document.createElement("tbody");
         
-        // 遍历数据（跳过表头）
-        data.slice(1).forEach(row => {
+        // 根据是否展开决定要显示的数据：默认只显示前200项
+        const itemsToShow = showAllItems ? rowsData : rowsData.slice(0, 200);
+        
+        itemsToShow.forEach(row => {
           const tr = document.createElement("tr");
           
           // 第一列：合并“公司名”、“职位”、“薪资”、“类型”
@@ -537,6 +554,23 @@
           });
           tbody.appendChild(tr);
         });
+        
+        // 如果项目数超过200且当前未展开，增加一个箭头行点击后显示全部项目
+        if (!showAllItems && totalCount > 200) {
+          const trMore = document.createElement("tr");
+          const tdMore = document.createElement("td");
+          tdMore.colSpan = headerNames.length;
+          tdMore.style.textAlign = "center";
+          tdMore.style.cursor = "pointer";
+          tdMore.style.fontWeight = "bold";
+          tdMore.textContent = "▼ 查看更多";
+          trMore.appendChild(tdMore);
+          trMore.addEventListener("click", function() {
+            showAllItems = true;
+            renderSummaryTable(filteredData);
+          });
+          tbody.appendChild(trMore);
+        }
         
         table.appendChild(tbody);
         container.appendChild(table);
