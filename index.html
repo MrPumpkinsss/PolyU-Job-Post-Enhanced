@@ -27,6 +27,13 @@
       margin-bottom: 20px;
       color: #444;
     }
+    /* “最后更新时间”显示样式 */
+    #lastUpdated {
+      font-size: 0.6em;
+      color: #777;
+      font-weight: 400;
+      margin-left: 10px;
+    }
     /* 筛选框样式 */
     #filterDiv {
       margin-bottom: 20px;
@@ -198,15 +205,12 @@
       justify-content: center;
       z-index: 9999;
     }
-    /* 修改免责声明内容样式：控制尺寸且允许滚动 */
     #disclaimerModal .modal-content {
       background-color: #fff;
       padding: 20px 30px;
       border-radius: 8px;
+      max-width: 1000px;
       width: 90%;
-      max-width: 500px;  /* 限制最大宽度 */
-      max-height: 90vh;  /* 限制最大高度 */
-      overflow-y: auto;  /* 内容超出时添加垂直滚动条 */
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     /* 标题“免责声明”居中 */
@@ -283,7 +287,10 @@
     </div>
   </div>
 
-  <h1>Job-Post-Enhanced</h1>
+  <h1>
+    Job-Post-Enhanced
+    <span id="lastUpdated"></span>
+  </h1>
   <div id="filterDiv">
     <!-- 类型筛选 -->
     <label for="jobTypeSelect">选择类型:</label>
@@ -348,9 +355,16 @@
           indexPostDate = -1,
           indexDeadline = -1;
       
-      // 读取 Excel 数据
+      // 读取 Excel 数据并获取最后修改时间
       fetch("job_listings.xlsx")
-        .then(response => response.arrayBuffer())
+        .then(response => {
+          // 从响应头中获取最后修改时间
+          const lastModified = response.headers.get("Last-Modified");
+          if (lastModified) {
+            document.getElementById("lastUpdated").innerHTML = `(最后更新时间：${lastModified})`;
+          }
+          return response.arrayBuffer();
+        })
         .then(data => {
           const workbook = XLSX.read(data, { type: 'array' });
           const firstSheetName = workbook.SheetNames[0];
