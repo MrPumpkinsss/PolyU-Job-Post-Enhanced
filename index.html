@@ -90,9 +90,10 @@
       width: 30%;
       background-color: #f0f0f0;
     }
-    /* 禁止渲染图片和 logo（通过隐藏） */
+    /* 禁止渲染图片、logo 元素以及特定 SVG 图标 */
     img,
-    .logo {
+    .logo,
+    svg.jss131 {
       display: none !important;
     }
     /* 小屏幕自适应 */
@@ -310,13 +311,18 @@
         detailContainer.innerHTML = "";
         if (detailColumnIndex !== -1) {
           const rawContent = row[detailColumnIndex] !== undefined ? row[detailColumnIndex] : "无工作详情";
-          // 为确保不渲染图片，先将内容塞入一个临时 DOM 中，再移除所有 <img> 标签
+          // 为确保不渲染图片或 SVG 图标，先将内容塞入一个临时 DOM 中，再移除所有 <img> 标签和具有 jss131 类名的 <svg> 标签
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = rawContent;
+          // 移除所有图片
           const imgs = tempDiv.getElementsByTagName("img");
           while (imgs.length > 0) {
             imgs[0].parentNode.removeChild(imgs[0]);
           }
+          // 移除具有 jss131 类的 svg 图标
+          const svgs = tempDiv.querySelectorAll("svg.jss131");
+          svgs.forEach(svg => svg.parentNode.removeChild(svg));
+          
           detailContainer.innerHTML = tempDiv.innerHTML;
         } else {
           detailContainer.innerHTML = "工作详情(HTML)列不存在。";
