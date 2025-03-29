@@ -90,6 +90,11 @@
       width: 30%;
       background-color: #f0f0f0;
     }
+    /* 禁止渲染图片和 logo（通过隐藏） */
+    img,
+    .logo {
+      display: none !important;
+    }
     /* 小屏幕自适应 */
     @media (max-width: 600px) {
       body {
@@ -304,8 +309,15 @@
         const detailContainer = document.getElementById("jobDetail");
         detailContainer.innerHTML = "";
         if (detailColumnIndex !== -1) {
-          const content = row[detailColumnIndex] !== undefined ? row[detailColumnIndex] : "无工作详情";
-          detailContainer.innerHTML = content;
+          const rawContent = row[detailColumnIndex] !== undefined ? row[detailColumnIndex] : "无工作详情";
+          // 为确保不渲染图片，先将内容塞入一个临时 DOM 中，再移除所有 <img> 标签
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = rawContent;
+          const imgs = tempDiv.getElementsByTagName("img");
+          while (imgs.length > 0) {
+            imgs[0].parentNode.removeChild(imgs[0]);
+          }
+          detailContainer.innerHTML = tempDiv.innerHTML;
         } else {
           detailContainer.innerHTML = "工作详情(HTML)列不存在。";
         }
