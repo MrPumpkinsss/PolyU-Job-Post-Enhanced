@@ -22,9 +22,15 @@
       text-align: center;
       margin: 10px 0;
     }
-    #filterDiv select {
+    #filterDiv select,
+    #filterDiv input[type="text"] {
       padding: 5px;
       font-size: 16px;
+      margin: 0 5px;
+    }
+    #filterDiv label {
+      font-size: 16px;
+      margin: 0 5px;
     }
     /* 布局：左右面板 */
     #container {
@@ -107,7 +113,8 @@
 <body>
   <h1>Excel 数据显示</h1>
   <div id="filterDiv">
-    <label for="jobTypeSelect">选择类型: </label>
+    <!-- 类型筛选 -->
+    <label for="jobTypeSelect">选择类型:</label>
     <select id="jobTypeSelect">
       <option value="">全部</option>
       <option value="Graduate Position">Graduate Position</option>
@@ -120,6 +127,12 @@
       <option value="Internship Position - Government Internship">Internship Position - Government Internship</option>
       <option value="Internship Position - STEM Internship">Internship Position - STEM Internship</option>
     </select>
+    <!-- 搜索功能 -->
+    <label for="searchInput">搜索:</label>
+    <input type="text" id="searchInput" placeholder="输入关键词">
+    <label for="caseSensitive">
+      <input type="checkbox" id="caseSensitive"> 区分大小写
+    </label>
   </div>
   
   <div id="container">
@@ -141,11 +154,11 @@
       let filteredData = [];
       // 定义左侧显示的列（概要）以及完整显示时需要的其他字段
       const summaryColumns = ["公司名", "职位", "招聘编号", "发布时间", "截止日期", "薪资", "类型"];
-      // detailColumns 数组可以用于后期只显示某些额外信息，但此处我们直接显示 Excel 所有列
-      const detailColumns = ["公司简介", "工作描述", "技能需求", "申请方式", "工作性质"];
-      let summaryIndices = {};  // 用来存储各 summary 列对应在 Excel 表头中的位置
+      // 用来存储 summary 列在 Excel 表头中的索引
+      let summaryIndices = {};
       let typeColumnIndex = -1; // 用于筛选的 “类型” 列
-      let currentSortColumn = null; // 当前排序字段（summaryColumns中的字段）
+      let detailColumnIndex = -1; // 用于右侧显示的 “工作详情(HTML)” 列
+      let currentSortColumn = null; // 当前排序字段
       let sortOrderAsc = true;      // true 为正序
       
       // 读取 Excel 数据
@@ -168,10 +181,16 @@
             summaryIndices[col] = headerRow.indexOf(col);
           });
           
-          // 获取“类型”的列用于筛选
+          // 获取“类型”列用于筛选
           typeColumnIndex = headerRow.indexOf("类型");
           if (typeColumnIndex === -1) {
             console.warn("未找到‘类型’列，筛选功能将不可用。");
+          }
+          
+          // 获取“工作详情(HTML)”列索引，用于右侧显示详细信息
+          detailColumnIndex = headerRow.indexOf("工作详情(HTML)");
+          if (detailColumnIndex === -1) {
+            console.warn("未找到‘工作详情(HTML)’列，右侧详细信息将不可用。");
           }
           
           // 初始显示全部数据
@@ -183,18 +202,41 @@
           document.getElementById("summaryTableContainer").innerHTML = "无法加载 Excel 数据。";
         });
       
-      // 筛选功能：根据下拉框选择更新左侧列表
+      // 绑定筛选器事件
       document.getElementById("jobTypeSelect").addEventListener("change", filterData);
+      document.getElementById("searchInput").addEventListener("input", filterData);
+      document.getElementById("caseSensitive").addEventListener("change", filterData);
       
+      // 综合筛选（类型和搜索）
       function filterData() {
         const selectedType = document.getElementById("jobTypeSelect").value;
-        if (selectedType === "" || typeColumnIndex === -1) {
-          filteredData = allTableData;
-        } else {
-          filteredData = [allTableData[0]].concat(
-            allTableData.slice(1).filter(row => row[typeColumnIndex] === selectedType)
-          );
+        const searchQuery = document.getElementById("searchInput").value;
+        const caseSensitive = document.getElementById("caseSensitive").checked;
+        
+        // 从所有数据中取除表头的其他数据进行筛选
+        let data = allTableData.slice(1);
+        
+        // 根据“类型”筛选（如果有选择）
+        if (selectedType !== "" && typeColumnIndex !== -1) {
+          data = data.filter(row => row[typeColumnIndex] === selectedType);
         }
+        
+        // 根据搜索关键词筛选（在所有列中查找包含的项）
+        if (searchQuery.trim() !== "") {
+          data = data.filter(row => {
+            return row.some(cell => {
+              const cellText = cell !== undefined ? cell.toString() : "";
+              if (!caseSensitive) {
+                return cellText.toLowerCase().includes(searchQuery.toLowerCase());
+              } else {
+                return cellText.includes(searchQuery);
+              }
+            });
+          });
+        }
+        
+        // 拼接表头
+        filteredData = [allTableData[0]].concat(data);
         currentSortColumn = null;
         sortOrderAsc = true;
         renderSummaryTable(filteredData);
@@ -214,7 +256,7 @@
         summaryColumns.forEach(col => {
           const th = document.createElement("th");
           th.textContent = col;
-          // 对“招聘编号”、“发布时间”、“截止日期”三列允许点击排序
+          // 对部分列添加点击排序功能
           if (["招聘编号", "发布时间", "截止日期"].includes(col)) {
             th.classList.add("sortable");
             th.addEventListener("click", function() {
@@ -244,10 +286,9 @@
             td.textContent = cellValue;
             tr.appendChild(td);
           });
-          // 点击该行时在右侧展示完整信息
+          // 点击行时显示右侧详细信息（仅显示“工作详情(HTML)”这一栏）
           tr.addEventListener("click", function() {
             showJobDetails(row);
-            // 添加行选中高亮（先移除所有选中样式）
             const rows = tbody.getElementsByTagName("tr");
             Array.from(rows).forEach(r => r.classList.remove("selected"));
             tr.classList.add("selected");
@@ -258,23 +299,16 @@
         container.appendChild(table);
       }
       
-      // 显示完整详细信息（右侧），逐项显示 Excel 表中所有列
+      // 显示右侧详细信息，只显示“工作详情(HTML)”这一栏
       function showJobDetails(row) {
         const detailContainer = document.getElementById("jobDetail");
         detailContainer.innerHTML = "";
-        const headerRow = allTableData[0];
-        const table = document.createElement("table");
-        for (let i = 0; i < headerRow.length; i++) {
-          const tr = document.createElement("tr");
-          const th = document.createElement("th");
-          th.textContent = headerRow[i];
-          const td = document.createElement("td");
-          td.textContent = row[i] !== undefined ? row[i] : "";
-          tr.appendChild(th);
-          tr.appendChild(td);
-          table.appendChild(tr);
+        if (detailColumnIndex !== -1) {
+          const content = row[detailColumnIndex] !== undefined ? row[detailColumnIndex] : "无工作详情";
+          detailContainer.innerHTML = content;
+        } else {
+          detailContainer.innerHTML = "工作详情(HTML)列不存在。";
         }
-        detailContainer.appendChild(table);
       }
       
       // 排序功能（仅排序左侧概要列表）
@@ -294,7 +328,7 @@
         const sortedRows = filteredData.slice(1).sort((a, b) => {
           let valA = a[colIdx] || "";
           let valB = b[colIdx] || "";
-          // 如果为日期列，则先转为日期比较
+          // 对发布时间和截止日期进行日期比较
           if (["发布时间", "截止日期"].includes(columnName)) {
             const dateA = Date.parse(valA);
             const dateB = Date.parse(valB);
@@ -302,7 +336,7 @@
               return sortOrderAsc ? dateA - dateB : dateB - dateA;
             }
           }
-          // 如果两者均为数字，则按数字比较
+          // 数字比较
           const numA = parseFloat(valA);
           const numB = parseFloat(valB);
           if (!isNaN(numA) && !isNaN(numB)) {
