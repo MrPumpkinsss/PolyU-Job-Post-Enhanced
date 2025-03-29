@@ -288,9 +288,11 @@
       <option value="Internship Position - Government Internship">Internship Position - Government Internship</option>
       <option value="Internship Position - STEM Internship">Internship Position - STEM Internship</option>
     </select>
-    <!-- 搜索功能 -->
-    <label for="searchInput">搜索:</label>
-    <input type="text" id="searchInput" placeholder="输入关键词">
+    <!-- 两个搜索框 -->
+    <label for="searchInput1">搜索词条1:</label>
+    <input type="text" id="searchInput1" placeholder="输入关键词1">
+    <label for="searchInput2">搜索词条2:</label>
+    <input type="text" id="searchInput2" placeholder="输入关键词2">
     <label for="caseSensitive">
       <input type="checkbox" id="caseSensitive"> 区分大小写
     </label>
@@ -382,13 +384,15 @@
       
       // 筛选事件绑定
       document.getElementById("jobTypeSelect").addEventListener("change", filterData);
-      document.getElementById("searchInput").addEventListener("input", filterData);
+      document.getElementById("searchInput1").addEventListener("input", filterData);
+      document.getElementById("searchInput2").addEventListener("input", filterData);
       document.getElementById("caseSensitive").addEventListener("change", filterData);
       
-      // 综合筛选（类型和搜索）
+      // 综合筛选（类型和多个搜索关键词）
       function filterData() {
         const selectedType = document.getElementById("jobTypeSelect").value;
-        const searchQuery = document.getElementById("searchInput").value;
+        const searchQuery1 = document.getElementById("searchInput1").value;
+        const searchQuery2 = document.getElementById("searchInput2").value;
         const caseSensitive = document.getElementById("caseSensitive").checked;
         
         // 除表头外所有数据
@@ -398,16 +402,31 @@
           data = data.filter(row => row[typeColumnIndex] === selectedType);
         }
         
-        if (searchQuery.trim() !== "") {
+        if (searchQuery1.trim() !== "" || searchQuery2.trim() !== "") {
           data = data.filter(row => {
-            return row.some(cell => {
-              const cellText = cell !== undefined ? cell.toString() : "";
-              if (!caseSensitive) {
-                return cellText.toLowerCase().includes(searchQuery.toLowerCase());
-              } else {
-                return cellText.includes(searchQuery);
-              }
-            });
+            let match1 = true;
+            let match2 = true;
+            if (searchQuery1.trim() !== "") {
+              match1 = row.some(cell => {
+                const cellText = cell !== undefined ? cell.toString() : "";
+                if (!caseSensitive) {
+                  return cellText.toLowerCase().includes(searchQuery1.toLowerCase());
+                } else {
+                  return cellText.includes(searchQuery1);
+                }
+              });
+            }
+            if (searchQuery2.trim() !== "") {
+              match2 = row.some(cell => {
+                const cellText = cell !== undefined ? cell.toString() : "";
+                if (!caseSensitive) {
+                  return cellText.toLowerCase().includes(searchQuery2.toLowerCase());
+                } else {
+                  return cellText.includes(searchQuery2);
+                }
+              });
+            }
+            return match1 && match2;
           });
         }
         
