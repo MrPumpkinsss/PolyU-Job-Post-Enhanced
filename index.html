@@ -41,6 +41,17 @@
     tr:nth-child(even) {
       background-color: #fafafa;
     }
+    /* 提示可排序的列增加指针效果 */
+    th {
+      cursor: default;
+    }
+    th.sortable {
+      cursor: pointer;
+    }
+    .sort-indicator {
+      font-size: 0.8em;
+      margin-left: 5px;
+    }
     /* 小屏幕自适应 */
     @media (max-width: 600px) {
       body {
@@ -65,42 +76,115 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // 从与当前文件同一目录下加载 Excel 文件
+      let sortedColumn = null; // 当前排序的列（注意：实际序号与 Excel 数据中列索引有关）
+      let sortOrderAsc = true; // 排序顺序，true 为正序
+      let tableData = [];      // 用于存储完整表格数据（包含表头）
+
+      // 读取 Excel 数据
       fetch("job_listings.xlsx")
         .then(function(response) {
           return response.arrayBuffer();
         })
         .then(function(data) {
-          // 读取 Excel 文件内容
           var workbook = XLSX.read(data, { type: 'array' });
-          // 获取第一个工作表
           var firstSheetName = workbook.SheetNames[0];
           var worksheet = workbook.Sheets[firstSheetName];
-          // 将工作表转换为二维数组，得到每行数据
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          
-          // 创建 HTML 表格
-          var table = document.createElement("table");
-          jsonData.forEach(function(row, rowIndex) {
-            var tr = document.createElement("tr");
-            // 从第二列开始，忽略第一列（序号）
-            row.slice(1).forEach(function(cell) {
-              var cellElement = document.createElement(rowIndex === 0 ? "th" : "td");
-              cellElement.textContent = cell;
-              tr.appendChild(cellElement);
-            });
-            table.appendChild(tr);
-          });
-          
-          // 将表格插入页面
-          var container = document.getElementById("excelData");
-          container.innerHTML = ""; // 清除“加载中...”提示
-          container.appendChild(table);
+          tableData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          renderTable(tableData);
         })
         .catch(function(error) {
           console.error("读取 Excel 文件失败：", error);
           document.getElementById("excelData").innerHTML = "无法加载 Excel 数据。";
         });
+
+      // 渲染表格函数
+      function renderTable(data) {
+        var container = document.getElementById("excelData");
+        container.innerHTML = "";
+        var table = document.createElement("table");
+
+        data.forEach(function(row, rowIndex) {
+          var tr = document.createElement("tr");
+          // 利用 row.slice(1) 忽略第一列（序号），从第二列开始显示
+          row.slice(1).forEach(function(cell, cellIndex) {
+            let cellElement;
+            if (rowIndex === 0) {
+              // 表头使用 th 标签
+              cellElement = document.createElement("th");
+              let headerText = cell;
+              // 判断是否为可排序的列
+              if (headerText === "招聘编号" || headerText === "发布时间" || headerText === "截止日期") {
+                cellElement.classList.add("sortable");
+                // 添加点击事件：注意传入的 cellIndex+1 对应 Excel 中的实际列索引（因为第一列被忽略）
+                cellElement.addEventListener("click", function() {
+                  sortTableByColumn(cellIndex + 1, headerText);
+                });
+                // 设置默认的排序提示符（点击后可切换正序/倒序）
+                var indicator = document.createElement("span");
+                indicator.textContent = " ⇅";
+                indicator.className = "sort-indicator";
+                cellElement.appendChild(document.createTextNode(headerText));
+                cellElement.appendChild(indicator);
+              } else {
+                cellElement.textContent = headerText;
+              }
+            } else {
+              // 数据行使用 td 标签
+              cellElement = document.createElement("td");
+              cellElement.textContent = cell !== undefined ? cell : "";
+            }
+            tr.appendChild(cellElement);
+          });
+          table.appendChild(tr);
+        });
+        container.appendChild(table);
+      }
+
+      // 排序函数
+      // 参数 columnIndex：实际根据 tableData 中的列索引来排序（注意：因为表格显示中第一列已被忽略，所以传入 cellIndex+1）
+      // 参数 columnName：用于判断是否为日期列等特殊处理
+      function sortTableByColumn(columnIndex, columnName) {
+        // 如果同一列连续点击则切换排序顺序，否则设置为正序
+        if (sortedColumn === columnIndex) {
+          sortOrderAsc = !sortOrderAsc;
+        } else {
+          sortedColumn = columnIndex;
+          sortOrderAsc = true;
+        }
+        // 获取表头和数据（不排序表头）
+        let header = tableData[0];
+        let dataRows = tableData.slice(1);
+
+        dataRows.sort(function(a, b) {
+          let valA = a[columnIndex] || "";
+          let valB = b[columnIndex] || "";
+
+          // 如果为日期列，尝试将字符串转换为日期进行比较
+          if (columnName === "发布时间" || columnName === "截止日期") {
+            let dateA = Date.parse(valA);
+            let dateB = Date.parse(valB);
+            if (!isNaN(dateA) && !isNaN(dateB)) {
+              return sortOrderAsc ? dateA - dateB : dateB - dateA;
+            }
+          }
+
+          // 如果两者都为数字，按数字比较
+          let numA = parseFloat(valA);
+          let numB = parseFloat(valB);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return sortOrderAsc ? numA - numB : numB - numA;
+          }
+
+          // 默认按字符串比较
+          if (valA < valB) return sortOrderAsc ? -1 : 1;
+          if (valA > valB) return sortOrderAsc ? 1 : -1;
+          return 0;
+        });
+
+        // 重新组合数据（头部 + 排序后的数据行）并渲染表格
+        tableData = [header].concat(dataRows);
+        renderTable(tableData);
+      }
     });
   </script>
 </body>
