@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PolyU-Job-Post-Enhanced</title>
+  <title>Job-Post-Enhanced</title>
   <!-- 引入 Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -18,6 +18,7 @@
       background-color: #f5f5f5;
       color: #333;
       line-height: 1.6;
+      -webkit-tap-highlight-color: transparent;
     }
     /* 页面标题 */
     h1 {
@@ -25,6 +26,13 @@
       font-size: 2.5em;
       margin-bottom: 20px;
       color: #444;
+    }
+    /* “最后更新时间”显示样式 */
+    #lastUpdated {
+      font-size: 0.6em;
+      color: #777;
+      font-weight: 400;
+      margin-left: 10px;
     }
     /* 筛选框样式 */
     #filterDiv {
@@ -155,6 +163,10 @@
       background-color: #f8f8f8;
       z-index: 2;
     }
+    /* 表格容器横向滚动支持 */
+    #summaryTableContainer {
+      overflow-x: auto;
+    }
     /* 小屏幕自适应 */
     @media (max-width: 600px) {
       body {
@@ -175,6 +187,9 @@
       }
       #filterDiv {
         padding: 10px;
+      }
+      table, th, td {
+        font-size: 14px;
       }
     }
     /* 免责声明模态框样式 */
@@ -272,7 +287,10 @@
     </div>
   </div>
 
-  <h1>PolyU-Job-Post-Enhanced</h1>
+  <h1>
+    Job-Post-Enhanced
+    <span id="lastUpdated"></span>
+  </h1>
   <div id="filterDiv">
     <!-- 类型筛选 -->
     <label for="jobTypeSelect">选择类型:</label>
@@ -282,7 +300,7 @@
       <option value="Part-time Position">Part-time Position</option>
       <option value="Temporary Position">Temporary Position</option>
       <option value="Student Assistants via Work-on-Campus by CPS">Student Assistants via Work-on-Campus by CPS</option>
-      <option value="Internship Position - Half- or One-year Internship">Internship Position - Half- or One-year Internship</option>
+      <option value="Internship Position - Half-或 One-year Internship">Internship Position - Half-或 One-year Internship</option>
       <option value="Internship Position - Summer Internship">Internship Position - Summer Internship</option>
       <option value="Internship Position - Winter Internship">Internship Position - Winter Internship</option>
       <option value="Internship Position - Government Internship">Internship Position - Government Internship</option>
@@ -316,13 +334,14 @@
     document.getElementById("agreeButton").addEventListener("click", function() {
       document.getElementById("disclaimerModal").style.display = "none";
     });
-    
+
     document.addEventListener("DOMContentLoaded", function() {
       let allTableData = [];
       let filteredData = [];
       let currentSortColumn = null; // 当前排序字段
       let sortOrderAsc = true;      // true 为正序
-
+      let showAllItems = false;     // 默认只显示前 200 条
+      
       // 用于筛选“类型”的列索引
       let typeColumnIndex = -1;
       // 用于右侧显示“工作详情(HTML)”的列索引
@@ -337,9 +356,16 @@
           indexPostDate = -1,
           indexDeadline = -1;
       
-      // 读取 Excel 数据
+      // 读取 Excel 数据并获取最后修改时间
       fetch("job_listings.xlsx")
-        .then(response => response.arrayBuffer())
+        .then(response => {
+          // 从响应头中获取最后修改时间
+          const lastModified = response.headers.get("Last-Modified");
+          if (lastModified) {
+            document.getElementById("lastUpdated").innerHTML = `(最后更新时间：${lastModified})`;
+          }
+          return response.arrayBuffer();
+        })
         .then(data => {
           const workbook = XLSX.read(data, { type: 'array' });
           const firstSheetName = workbook.SheetNames[0];
@@ -390,6 +416,8 @@
       
       // 综合筛选（类型和多个搜索关键词）
       function filterData() {
+        // 每次筛选时重置为只显示前 200 条数据
+        showAllItems = false;
         const selectedType = document.getElementById("jobTypeSelect").value;
         const searchQuery1 = document.getElementById("searchInput1").value;
         const searchQuery2 = document.getElementById("searchInput2").value;
@@ -430,6 +458,7 @@
           });
         }
         
+        // 重新组装包含表头与数据的数组
         filteredData = [allTableData[0]].concat(data);
         currentSortColumn = null;
         sortOrderAsc = true;
@@ -437,10 +466,21 @@
         document.getElementById("jobDetail").innerHTML = "<p>点击左侧项目查看详细信息</p>";
       }
       
-      // 渲染左侧概要列表（四列显示）
+      // 渲染左侧概要列表（四列显示）并显示总项目数
       function renderSummaryTable(data) {
         const container = document.getElementById("summaryTableContainer");
         container.innerHTML = "";
+        
+        // 获取数据行（不含表头）
+        const rowsData = data.slice(1);
+        const totalCount = rowsData.length;
+        
+        // 显示总项目数
+        const countDisplay = document.createElement("div");
+        countDisplay.textContent = `共 ${totalCount} 项`;
+        countDisplay.style.fontWeight = "bold";
+        countDisplay.style.marginBottom = "10px";
+        container.appendChild(countDisplay);
         
         const table = document.createElement("table");
         const thead = document.createElement("thead");
@@ -471,8 +511,10 @@
         
         const tbody = document.createElement("tbody");
         
-        // 遍历数据（跳过表头）
-        data.slice(1).forEach(row => {
+        // 根据是否展开决定要显示的数据：默认只显示前200项
+        const itemsToShow = showAllItems ? rowsData : rowsData.slice(0, 200);
+        
+        itemsToShow.forEach(row => {
           const tr = document.createElement("tr");
           
           // 第一列：合并“公司名”、“职位”、“薪资”、“类型”
@@ -512,6 +554,23 @@
           });
           tbody.appendChild(tr);
         });
+        
+        // 如果项目数超过200且当前未展开，增加一个箭头行点击后显示全部项目
+        if (!showAllItems && totalCount > 200) {
+          const trMore = document.createElement("tr");
+          const tdMore = document.createElement("td");
+          tdMore.colSpan = headerNames.length;
+          tdMore.style.textAlign = "center";
+          tdMore.style.cursor = "pointer";
+          tdMore.style.fontWeight = "bold";
+          tdMore.textContent = "▼ 查看更多";
+          trMore.appendChild(tdMore);
+          trMore.addEventListener("click", function() {
+            showAllItems = true;
+            renderSummaryTable(filteredData);
+          });
+          tbody.appendChild(trMore);
+        }
         
         table.appendChild(tbody);
         container.appendChild(table);
